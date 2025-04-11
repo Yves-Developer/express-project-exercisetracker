@@ -56,48 +56,49 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     description: exercise.description
   });
 });
+//Get all user
 app.get('/api/users/:_id/logs', async (req, res) => {
+
+  const { from, to, limit } = req.query;
+  const _id = req.params._id;
+
   try {
-    const { from, to, limit } = req.query;
-    const user = await User.findById(req.params._id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+      const userDoc = await User.findById(_id);
 
-    const query = { userId: user._id };
+      let dateObj = {};
+      let filter = { user_id: _id };
 
-    if (from || to) {
-      query.date = {};
-      if (from) query.date.$gte = new Date(from);
-      if (to) query.date.$lte = new Date(to);
-    }
-
-    let exercisesQuery = Exercise.find(query);
-
-    if (limit) {
-      const lim = parseInt(limit);
-      if (!isNaN(lim)) {
-        exercisesQuery = exercisesQuery.limit(lim);
+      if (from) {
+          dateObj['$gte'] = new Date(from)
       }
-    }
+      if (to) {
+          dateObj['$lte'] = new Date(to);
+      }
 
-    const exercises = await exercisesQuery.exec();
+      if (from || to) {
+          filter['date'] = dateObj;
+      }
 
-    res.json({
-      username: user.username,
-      count: exercises.length,
-      _id: user._id,
-      log: exercises.map(e => ({
-        description: e.description,
-        duration: e.duration,
-        date: e.date.toDateString()
-      }))
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+      const exercises = await Exercise.find(filter).limit(limit ? +limit : 20);
+
+      const log = exercises.map((e) => {
+          return {
+              description: e.description,
+              duration: e.duration,
+              date: new Date(e.date).toDateString()
+          }
+      })
+
+      res.json({
+          username: userDoc.username,
+          count: exercises.length,
+          _id,
+          log
+      });
+  } catch (error) {
+      res.json(error);
   }
 });
-
-
 
 
 
