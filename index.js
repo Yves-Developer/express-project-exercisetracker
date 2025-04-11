@@ -65,6 +65,8 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const dateFilter = {};
+    dateFilter["$gte"] = new Date(0);
+    dateFilter["$lte"] = new Date().now();
     if(from) {
       dateFilter["$gte"] = new Date(from);
     }
