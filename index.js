@@ -64,19 +64,18 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     const user = await User.findById(req.params._id);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Base filter
-    let filter = { userId: user._id };
-
-    // Parse "from" and "to" if valid
-    if (from || to) {
-      filter.date = {};
-      if (from && !isNaN(new Date(from))) {
-        filter.date.$gte = new Date(from);
-      }
-      if (to && !isNaN(new Date(to))) {
-        filter.date.$lte = new Date(to);
-      }
+    const dateFilter = {};
+    if (from && !isNaN(new Date(from))) {
+      dateFilter.$gte = new Date(from);
     }
+    if (to && !isNaN(new Date(to))) {
+      dateFilter.$lte = new Date(to);
+    }
+
+    const filter = {
+      userId: user._id,
+      ...(Object.keys(dateFilter).length ? { date: dateFilter } : {})
+    };
 
     let query = Exercise.find(filter).select('description duration date');
     if (limit && !isNaN(parseInt(limit))) {
@@ -92,7 +91,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       log: exercises.map(e => ({
         description: e.description,
         duration: e.duration,
-        date: e.date.toDateString()
+        date: e.date.toDateString() // ✅ FCC expects this format
       }))
     });
   } catch (err) {
