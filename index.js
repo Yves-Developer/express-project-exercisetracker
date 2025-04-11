@@ -65,24 +65,27 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const dateFilter = {};
-    if (from && !isNaN(new Date(from))) {
-      dateFilter.$gte = new Date(from);
+    if(from) {
+      dateFilter["$gte"] = new Date(from);
     }
-    if (to && !isNaN(new Date(to))) {
-      dateFilter.$lte = new Date(to);
+    if (to) {
+      dateFilter["$lte"] = new Date(to);
     }
 
     const filter = {
       userId: user._id,
-      ...(Object.keys(dateFilter).length ? { date: dateFilter } : {})
     };
 
-    let query = Exercise.find(filter).select('description duration date');
-    if (limit && !isNaN(parseInt(limit))) {
-      query = query.limit(parseInt(limit));
+    if(from || to){
+      filter.date = dateFilter;
     }
 
-    const exercises = await query.exec();
+    // let query = Exercise.find(filter).select('description duration date');
+    // if (limit && !isNaN(parseInt(limit))) {
+    //   query = query.limit(parseInt(limit));
+    // }
+
+    const exercises = await Exercise.find(filter).limit(+limit ?? 10);
 
     res.json({
       username: user.username,
@@ -91,7 +94,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       log: exercises.map(e => ({
         description: e.description,
         duration: e.duration,
-        date: e.date.toDateString() // ✅ FCC expects this format
+        date: e.date.toDateString()
       }))
     });
   } catch (err) {
