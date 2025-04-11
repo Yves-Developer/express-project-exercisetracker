@@ -61,18 +61,28 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 app.get('/api/users/:_id/logs', async (req, res) => {
   const { from, to, limit } = req.query;
   const user = await User.findById(req.params._id);
-  if (!user) return res.send('User not found');
+  if (!user) return res.status(404).json({ error: 'User not found' });
 
   let filter = { userId: user._id };
 
+  // Date filter
   if (from || to) {
     filter.date = {};
-    if (from) filter.date.$gte = new Date(from);
-    if (to) filter.date.$lte = new Date(to);
+    if (from) {
+      const fromDate = new Date(from);
+      if (!isNaN(fromDate)) filter.date.$gte = fromDate;
+    }
+    if (to) {
+      const toDate = new Date(to);
+      if (!isNaN(toDate)) filter.date.$lte = toDate;
+    }
   }
 
   let query = Exercise.find(filter).select('description duration date');
-  if (limit) query = query.limit(Number(limit));
+
+  if (limit && !isNaN(limit)) {
+    query = query.limit(parseInt(limit));
+  }
 
   const exercises = await query.exec();
 
@@ -87,6 +97,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     }))
   });
 });
+
 
 
 
