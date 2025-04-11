@@ -3,13 +3,87 @@ const app = express()
 const cors = require('cors')
 require('dotenv').config()
 
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+
 app.use(cors())
 app.use(express.static('public'))
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
+const User = require('./models/User');
+const Exercise = require('./models/Exercise');
+
+// Create User
+app.post('/api/users', async (req, res) => {
+  const user = new User({ username: req.body.username });
+  await user.save();
+  res.json({ username: user.username, _id: user._id });
+});
+
+// Get All Users
+app.get('/api/users', async (req, res) => {
+  const users = await User.find({}, 'username _id');
+  res.json(users);
+});
+
+// Add Exercise
+app.post('/api/users/:_id/exercises', async (req, res) => {
+  const user = await User.findById(req.params._id);
+  if (!user) return res.send('User not found');
+
+  const { description, duration, date } = req.body;
+  const exercise = new Exercise({
+    userId: user._id,
+    description,
+    duration: parseInt(duration),
+    date: date ? new Date(date) : new Date()
+  });
+
+  await exercise.save();
+
+  res.json({
+    _id: user._id,
+    username: user.username,
+    date: exercise.date.toDateString(),
+    duration: exercise.duration,
+    description: exercise.description
+  });
+});
+
+// Get Logs
+app.get('/api/users/:_id/logs', async (req, res) => {
+  const { from, to, limit } = req.query;
+  const user = await User.findById(req.params._id);
+  if (!user) return res.send('User not found');
+
+  let filter = { userId: user._id };
+
+  if (from || to) {
+    filter.date = {};
+    if (from) filter.date.$gte = new Date(from);
+    if (to) filter.date.$lte = new Date(to);
+  }
+
+  let query = Exercise.find(filter).select('description duration date');
+  if (limit) query = query.limit(Number(limit));
+
+  const exercises = await query.exec();
+
+  res.json({
+    _id: user._id,
+    username: user.username,
+    count: exercises.length,
+    log: exercises.map(e => ({
+      description: e.description,
+      duration: e.duration,
+      date: e.date.toDateString()
+    }))
+  });
+});
 
 
 
