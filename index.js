@@ -66,7 +66,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
       const userDoc = await User.findById(_id);
 
       let dateObj = {};
-      let filter = { user_id: _id };
+      let filter = { userId: _id };
 
       if (from) {
           dateObj['$gte'] = new Date(from)
@@ -79,7 +79,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
           filter['date'] = dateObj;
       }
 
-      const exercises = await Exercise.find(filter).limit(limit ? +limit : 20);
+      const exercises = await Exercise.find(filter).limit(limit ? +limit : 0);
 
       const log = exercises.map((e) => {
           return {
