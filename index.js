@@ -84,8 +84,8 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
       
     
-const exercises = await Exercise.find(filter).limit(+limit || 100);
- 
+    const exercises = await Exercise.find(filter)
+    .limit(limit ? parseInt(limit) : 0);
 
     res.json({
       username: user.username,
