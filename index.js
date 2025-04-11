@@ -79,14 +79,11 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if(from || to){
       filter.date = dateFilter;
     }
-     if(limit){
-      const exercises = await Exercise.find(filter).limit(+limit);
-     }
-     else{
-      const exercises = await Exercise.find(filter).limit(10);
-     }
 
+      
     
+const exercises = await Exercise.find(filter).limit(+limit || 100);
+ 
 
     res.json({
       username: user.username,
