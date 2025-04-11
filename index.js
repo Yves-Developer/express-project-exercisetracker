@@ -66,7 +66,7 @@ app.get('/api/users/:_id/logs', async (req, res) => {
 
     const dateFilter = {};
     dateFilter["$gte"] = new Date(0);
-    dateFilter["$lte"] = new Date().now();
+    dateFilter["$lte"] = new Date();
     if(from) {
       dateFilter["$gte"] = new Date(from);
     }
