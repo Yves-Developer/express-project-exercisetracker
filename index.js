@@ -59,43 +59,46 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 
 // Get Logs
 app.get('/api/users/:_id/logs', async (req, res) => {
-  const { from, to, limit } = req.query;
-  const user = await User.findById(req.params._id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
+  try {
+    const { from, to, limit } = req.query;
+    const user = await User.findById(req.params._id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-  let filter = { userId: user._id };
+    // Base filter
+    let filter = { userId: user._id };
 
-  // Date filter
-  if (from || to) {
-    filter.date = {};
-    if (from) {
-      const fromDate = new Date(from);
-      if (!isNaN(fromDate)) filter.date.$gte = fromDate;
+    // Parse "from" and "to" if valid
+    if (from || to) {
+      filter.date = {};
+      if (from && !isNaN(new Date(from))) {
+        filter.date.$gte = new Date(from);
+      }
+      if (to && !isNaN(new Date(to))) {
+        filter.date.$lte = new Date(to);
+      }
     }
-    if (to) {
-      const toDate = new Date(to);
-      if (!isNaN(toDate)) filter.date.$lte = toDate;
+
+    let query = Exercise.find(filter).select('description duration date');
+    if (limit && !isNaN(parseInt(limit))) {
+      query = query.limit(parseInt(limit));
     }
+
+    const exercises = await query.exec();
+
+    res.json({
+      username: user.username,
+      count: exercises.length,
+      _id: user._id,
+      log: exercises.map(e => ({
+        description: e.description,
+        duration: e.duration,
+        date: e.date.toDateString()
+      }))
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
-
-  let query = Exercise.find(filter).select('description duration date');
-
-  if (limit && !isNaN(limit)) {
-    query = query.limit(parseInt(limit));
-  }
-
-  const exercises = await query.exec();
-
-  res.json({
-    _id: user._id,
-    username: user.username,
-    count: exercises.length,
-    log: exercises.map(e => ({
-      description: e.description,
-      duration: e.duration,
-      date: e.date.toDateString()
-    }))
-  });
 });
 
 
