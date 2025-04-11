@@ -79,13 +79,14 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     if(from || to){
       filter.date = dateFilter;
     }
+     if(limit){
+      const exercises = await Exercise.find(filter).limit(+limit);
+     }
+     else{
+      const exercises = await Exercise.find(filter).limit(10);
+     }
 
-    // let query = Exercise.find(filter).select('description duration date');
-    // if (limit && !isNaN(parseInt(limit))) {
-    //   query = query.limit(parseInt(limit));
-    // }
-
-    const exercises = await Exercise.find(filter).limit(+limit ?? 10);
+    
 
     res.json({
       username: user.username,
