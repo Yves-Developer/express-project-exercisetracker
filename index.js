@@ -4,7 +4,8 @@ const cors = require('cors')
 require('dotenv').config()
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
-
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 mongoose.connect(process.env.DB_URL)
 
 const UserSchema = new Schema({
